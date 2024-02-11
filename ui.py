@@ -8,7 +8,7 @@ from PIL import Image
 from io import BytesIO
 import os
 
-api_key = os.environ['LEONARDO_API_KEY']
+api_key = st.secrets["LEONARDO_API_KEY"]
 authorization = "Bearer %s" % api_key
 headers = {
     "accept": "application/json",
