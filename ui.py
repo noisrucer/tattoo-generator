@@ -9,6 +9,7 @@ from io import BytesIO
 import os
 
 api_key = st.secrets["LEONARDO_API_KEY"]
+
 authorization = "Bearer %s" % api_key
 headers = {
     "accept": "application/json",
@@ -59,14 +60,22 @@ def generate_images(image_bytes: bytes):
     generation_id = response.json()['sdGenerationJob']['generationId']
 
     url = "https://cloud.leonardo.ai/api/rest/v1/generations/%s" % generation_id
+    i = 0
+    progress_text = "Image is being generated..."
+    progress_bar = st.progress(0, text=progress_text)
     while True:
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
             time.sleep(1.5)
+            progress_bar.progress(i + 1, text=progress_text)
+            i += 1
             continue
         else:
             if not response.json()['generations_by_pk']['generated_images']:
+                progress_bar.progress(i + 1, text=progress_text)
+                i += 1
                 continue
+        progress_bar.progress(100, text = "Complete!")
 
         print(f"Get the generation of images: {response.status_code}")
         print(response.text)
@@ -93,21 +102,17 @@ def main():
     image = st.file_uploader("Upload a tattoo image", type=['png', 'jpg', 'jpeg'])
     if image:
         st.image(image, caption="Original Tattoo image", width=400)
-    prompt = st.text_input("Prompt text")
+    prompt = st.text_input("(선택) Prompt", placeholder="어떤 느낌의 타투를 원하는지 간략히 입력해주세요.")
 
     upload_button = st.button("Generate Tattoos")
 
     if upload_button:
-        if image and prompt:
+        if image:
+            if not prompt:
+                prompt = "As per image, tattoo style, white background"
             # Upload image
-            image_id = uuid4().hex
             image_bytes = image.read()
-            # image_path = f"saved/{image_id}.png"
-            # with open(image_path, "wb") as f:
-            #     f.write(image.read())
-            
             generate_images(image_bytes)
-            
         else:
             pass
 
